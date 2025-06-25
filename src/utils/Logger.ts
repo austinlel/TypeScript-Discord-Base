@@ -1,3 +1,5 @@
+// Logger for Console.
+
 import chalk from 'chalk';
 
 class Logger {

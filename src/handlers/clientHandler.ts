@@ -10,28 +10,6 @@ import { buttons } from './buttonHandler';
 import chalk from 'chalk';
 import { modals } from './modalHandler';
 
-function displayAsciiArt() {
-	console.clear();
-	console.log(
-		chalk.cyan(`
-██████╗ ██╗███████╗ ██████╗ ██████╗ ██████╗ ██████╗     ██████╗  ██████╗ ████████╗
-██╔══██╗██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔══██╗    ██╔══██╗██╔═══██╗╚══██╔══╝
-██║  ██║██║███████╗██║     ██║   ██║██████╔╝██║  ██║    ██████╔╝██║   ██║   ██║   
-██║  ██║██║╚════██║██║     ██║   ██║██╔══██╗██║  ██║    ██╔══██╗██║   ██║   ██║   
-██████╔╝██║███████║╚██████╗╚██████╔╝██║  ██║██████╔╝    ██████╔╝╚██████╔╝   ██║   
-╚═════╝ ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝     ╚═════╝  ╚═════╝    ╚═╝   
-	`)
-	);
-	console.log(chalk.magenta('═'.repeat(80)));
-	console.log(
-		chalk.yellow(
-			'                          Austin Development Discord Bot'
-		)
-	);
-	console.log(chalk.magenta('═'.repeat(80)));
-	console.log();
-}
-
 export async function setupClient() {
 	const client = new Client({
 		intents: [
@@ -53,63 +31,38 @@ export async function setupClient() {
 }
 
 async function initializeClient(client: Client) {
-	displayAsciiArt();
-
+	console.clear();
 	client.user?.setActivity({
 		name: `Austin Develop`,
 		type: ActivityType.Watching,
 	});
 	client.user?.setPresence({ status: 'dnd' });
 
-	console.log(
-		chalk.green('🤖 ') +
-			chalk.white(`Bot User: ${chalk.cyan(client.user?.tag)}`)
-	);
-	console.log(
-		chalk.green('✅ ') +
-			chalk.white('Client Status: ') +
-			chalk.green('OPERATIONAL')
-	);
-	console.log();
+	logInfo('🤖 Bot User:', chalk.cyan(client.user?.tag));
+	logInfo('✅ Client Status:', chalk.green('OPERATIONAL'));
 
 	if (process.env?.USE_DATABASE !== 'true') {
-		console.log(
-			chalk.yellow('⚠️  ') +
-				chalk.white('Database: ') +
-				chalk.red('DISABLED')
-		);
-		console.log(
-			chalk.gray(
-				'   └─ Set USE_DATABASE=true to enable MongoDB connection'
-			)
+		logWarning('⚠️ Database:', chalk.red('DISABLED'));
+		logInfo(
+			'   └─ Set USE_DATABASE=true to enable MongoDB connection'
 		);
 		return;
-	} else {
-		const mongooseUrl = process.env?.MONGOOSE_URL;
-		if (typeof mongooseUrl !== 'string') {
-			throw new Error(
-				'MONGOOSE_URL is not defined in the environment variables & or is not a string.'
-			);
-		}
+	}
 
-		console.log(
-			chalk.blue('🔗 ') + chalk.white('Connecting to MongoDB...')
-		);
-		await mongoose.connect(mongooseUrl);
-		console.log(
-			chalk.green('✅ ') +
-				chalk.white('Database: ') +
-				chalk.green('CONNECTED')
+	const mongooseUrl = process.env?.MONGOOSE_URL;
+	if (typeof mongooseUrl !== 'string') {
+		throw new Error(
+			'MONGOOSE_URL is not defined in the environment variables or is not a string.'
 		);
 	}
 
-	console.log();
-	console.log(chalk.magenta('═'.repeat(80)));
-	console.log(
-		chalk.cyan('                              Bot is now running!')
-	);
-	console.log(chalk.magenta('═'.repeat(80)));
-	console.log();
+	logInfo('🔗 Connecting to MongoDB...');
+	await mongoose.connect(mongooseUrl);
+	logInfo('✅ Database:', chalk.green('CONNECTED'));
+
+	logSeparator();
+	logInfo('Bot is now running!');
+	logSeparator();
 }
 
 async function handleInteraction(interaction: any) {
@@ -122,7 +75,7 @@ async function handleInteraction(interaction: any) {
 			await handleModalInteraction(interaction);
 		}
 	} catch (error) {
-		console.error(chalk.red('❌ ERROR: ') + error);
+		logError('❌ ERROR:');
 		await handleInteractionError(interaction);
 	}
 }
@@ -131,86 +84,82 @@ async function handleCommandInteraction(interaction: any) {
 	const command = commands.get(interaction.commandName);
 
 	if (!command) {
-		console.error(
-			chalk.red('❌ COMMAND ERROR: ') +
-				chalk.white(
-					`No command matching ${chalk.yellow(
-						interaction.commandName
-					)} was found.`
-				)
+		logError(
+			'❌ COMMAND ERROR:',
+			`No command matching ${chalk.yellow(
+				interaction.commandName
+			)} was found.`
 		);
 		return;
 	}
 
 	await command.execute(interaction);
-	if (process.env?.DEBUG_MODE !== 'production') {
-		console.log(
-			chalk.green('⚡ COMMAND: ') +
-				chalk.cyan(interaction.commandName) +
-				chalk.gray(` executed by ${interaction.user.tag}`)
-		);
-	}
-	return;
+	logDebug(
+		'⚡ COMMAND:',
+		`${chalk.cyan(interaction.commandName)} executed by ${
+			interaction.user.tag
+		}`
+	);
 }
 
 async function handleButtonInteraction(interaction: any) {
 	const button = buttons.get(interaction.customId);
 
 	if (!button) {
-		console.error(
-			chalk.red('❌ BUTTON ERROR: ') +
-				chalk.white(
-					`No button matching ${chalk.yellow(
-						interaction.customId
-					)} was found.`
-				)
+		logError(
+			'❌ BUTTON ERROR:',
+			`No button matching ${chalk.yellow(
+				interaction.customId
+			)} was found.`
 		);
 		return;
 	}
 
 	await button.execute(interaction);
-	if (process.env?.DEBUG_MODE !== 'production') {
-		console.log(
-			chalk.blue('👆 BUTTON: ') +
-				chalk.cyan(interaction.customId) +
-				chalk.gray(` pressed by ${interaction.user.tag}`)
-		);
-	}
-	return;
+	logDebug(
+		'👆 BUTTON:',
+		`${chalk.cyan(interaction.customId)} pressed by ${
+			interaction.user.tag
+		}`
+	);
 }
 
 async function handleModalInteraction(interaction: any) {
 	if (!interaction.isModalSubmit()) return;
 	const modal = modals.get(interaction.customId);
-	if (!modal)
-		return `No modal matching ${interaction.customId} was found.`;
+
+	if (!modal) {
+		logError(
+			'❌ MODAL ERROR:',
+			`No modal matching ${chalk.yellow(
+				interaction.customId
+			)} was found.`
+		);
+		return;
+	}
+
 	try {
 		await modal.execute(interaction);
-		if (process.env?.DEBUG_MODE !== 'production') {
-			console.log(
-				chalk.green('📝 MODAL: ') +
-					chalk.cyan(interaction.customId) +
-					chalk.gray(` submitted by ${interaction.user.tag}`)
-			);
-		}
+		logDebug(
+			'📝 MODAL:',
+			`${chalk.cyan(interaction.customId)} submitted by ${
+				interaction.user.tag
+			}`
+		);
 	} catch (error) {
-		console.error(
-			chalk.red('❌ MODAL ERROR: ') +
-				chalk.white(
-					`Error executing modal ${chalk.yellow(
-						interaction.customId
-					)}: ${error}`
-				)
+		logError(
+			'❌ MODAL ERROR:',
+			`Error executing modal ${chalk.yellow(
+				interaction.customId
+			)}: ${error}`
 		);
 		await handleInteractionError(interaction);
-		return;
 	}
 }
 
 async function handleInteractionError(interaction: any) {
 	const errorMessage =
 		'There was an error executing this interaction!';
-
 	if (interaction.replied || interaction.deferred) {
 		await interaction.followUp({
 			content: errorMessage,
@@ -222,4 +171,26 @@ async function handleInteractionError(interaction: any) {
 			flags: 'Ephemeral',
 		});
 	}
+}
+
+function logInfo(label: string, message?: string) {
+	console.log(chalk.green(label), message || '');
+}
+
+function logWarning(label: string, message?: string) {
+	console.log(chalk.yellow(label), message || '');
+}
+
+function logError(label: string, message?: string) {
+	console.error(chalk.red(label), message || '');
+}
+
+function logDebug(label: string, message?: string) {
+	if (process.env?.DEBUG_MODE !== 'production') {
+		console.log(chalk.gray(label), message || '');
+	}
+}
+
+function logSeparator() {
+	console.log(chalk.magenta('═'.repeat(80)));
 }

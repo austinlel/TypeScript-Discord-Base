@@ -19,7 +19,7 @@
     "emitDecoratorMetadata": true,
     "incremental": true,
     "paths": {
-      "@external/*": ["c:/Users/synap/Desktop/web/*"]
+      "@external/*": ["./external/*"]
     }
   },
   "include": ["src/**/*"],

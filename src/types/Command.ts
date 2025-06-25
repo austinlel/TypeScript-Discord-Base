@@ -1,3 +1,5 @@
+// Simple Command Interface..
+
 import {
 	ChatInputCommandInteraction,
 	SlashCommandBuilder,

@@ -1,3 +1,5 @@
+// Simple Button Interface..
+
 import { ButtonInteraction } from 'discord.js';
 
 export interface Button {

@@ -1,3 +1,5 @@
+// Connecting to DB function called in index.ts
+
 import mongoose from 'mongoose';
 
 export async function connectDB() {
