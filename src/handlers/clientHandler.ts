@@ -41,24 +41,40 @@ async function initializeClient(client: Client) {
 	logInfo('🤖 Bot User:', chalk.cyan(client.user?.tag));
 	logInfo('✅ Client Status:', chalk.green('OPERATIONAL'));
 
+	// Check if database should be used
 	if (process.env?.USE_DATABASE !== 'true') {
-		logWarning('⚠️ Database:', chalk.red('DISABLED'));
+		logWarning('⚠️ Database:', chalk.yellow('DISABLED'));
 		logInfo(
 			'   └─ Set USE_DATABASE=true to enable MongoDB connection'
 		);
+		logSeparator();
+		logInfo('Bot is now running!');
+		logSeparator();
 		return;
 	}
 
+	// Attempt database connection only if enabled
 	const mongooseUrl = process.env?.MONGOOSE_URL;
-	if (typeof mongooseUrl !== 'string') {
-		throw new Error(
-			'MONGOOSE_URL is not defined in the environment variables or is not a string.'
+	if (!mongooseUrl || typeof mongooseUrl !== 'string') {
+		logError(
+			'❌ Database Error:',
+			'MONGOOSE_URL is not defined or invalid'
 		);
+		logWarning('   └─ Continuing without database connection');
+		logSeparator();
+		logInfo('Bot is now running!');
+		logSeparator();
+		return;
 	}
 
-	logInfo('🔗 Connecting to MongoDB...');
-	await mongoose.connect(mongooseUrl);
-	logInfo('✅ Database:', chalk.green('CONNECTED'));
+	try {
+		logInfo('🔗 Connecting to MongoDB...');
+		await mongoose.connect(mongooseUrl);
+		logInfo('✅ Database:', chalk.green('CONNECTED'));
+	} catch (error) {
+		logError('❌ Database Connection Failed:', String(error));
+		logWarning('   └─ Continuing without database connection');
+	}
 
 	logSeparator();
 	logInfo('Bot is now running!');
@@ -75,7 +91,7 @@ async function handleInteraction(interaction: any) {
 			await handleModalInteraction(interaction);
 		}
 	} catch (error) {
-		logError('❌ ERROR:');
+		logError('❌ ERROR:', String(error));
 		await handleInteractionError(interaction);
 	}
 }
